@@ -27,9 +27,8 @@ Proposed format (Little Endian):
         uint8_t unknown1; // Always 0x00
         uint8_t unknown2; // Always 0x00
         uint8_t unknown3; // Always 0x00
-        uint16_t checksum; // Unknown format, increments linearly with pkt_id
+        uint16_t poller_tag; // this identifies the poller for discovery mute purposes
     }
-
 
     struct vpl_discovery_response {
         uint16_t header; // 0x08 0x00
@@ -41,6 +40,37 @@ Proposed format (Little Endian):
     }
 
     Model number: 0x04 0x07 = VPL610-20. 0x04 0x02 = VPL305-20
+
+
+# Discovery Mute
+
+The last two octets of the discovery poll packet are a tag that allows the sender to mute fixtures for a particular sender, and then fire up a new pair of octets when they want to discover again.   
+
+The discovery mute command is 0x000f:
+
+    0000   08 00 0f 00 83 00 00 00 07 00 03 00 c2 bb 01
+
+Packet format is this:
+
+    struct discovery_mute_request {
+        uint16_t header; // 0x08 0x00
+        uint16_t packet_type; // 0x01 0x00 = discovery poll, 0x02 0x00 = discovery response
+        uint16_t pkt_id; // Used to match responses
+        uint8_t unknown1; // Always 0x00
+        uint8_t unknown2; // Always 0x00
+        uint8_t unknown3; // Always 0x00
+        uint16_t unknown4; // always 0x0007 in my captures
+        uint16_t unknown5; // always 0x0003 in my captures
+        uint16_t poller_tag; // this identifies the poller for discovery mute purposes
+        uint8_t flag; // assume 0x01 = enabled, 0x00 = disable
+    }
+
+The response is this:
+
+    0000   08 00 10 00 83 00 00 04 07 00 00 47 4d 00 00 01
+    0010   4c 36 31 30 2d 32 30
+
+Which is clearly packet_type 0x0010 but I'm not sure the format of this or why it's the response to the discovery mute command.
 
 
 # Sensor packets
@@ -121,8 +151,10 @@ This clearly consists of tagged fields of *probably* IEEE floating point numbers
 Just looking for strings, these are packet_types:
 
 0x000c - a bunch of enums getting reported?  All the things in the dropdown menus are here
+
 0x000e - modes looks like?
 
 0x0005 - sensor description requests
+
 0x0006 - sensor descriptions here
 
